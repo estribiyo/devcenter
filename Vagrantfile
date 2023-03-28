@@ -18,11 +18,8 @@ unless Vagrant.has_plugin?("vagrant-hostmanager")
   system('vagrant plugin install vagrant-hostmanager')
 end
 
-git_server = "desarrollo.casadalourensa.es"
 _config = {
-  "common_dirs" => {
-    "/mnt/docker" => "docker"
-  },
+  "common_dirs" => {},
   "guests" => {
     "ispconfig" => {
       "disksize" => "20GB",
@@ -33,7 +30,6 @@ _config = {
         },
         "telegraf_agent_package_method" => "online",
         "telegraf_agent_package_state" => "latest",
-        "docker_persistent_dir" => "/mnt/docker",
         "default_php_open_basedir" => 'None'
       },
       "gui" => false,
@@ -55,10 +51,6 @@ _config = {
       }
     },
   }, 
-  "git" => {
-    "server" => git_server,
-    "port" => "2224"
-  },
   "user" => {
     "login" => "vagrant",
     "password" => '$6$dSL9HjGPaP3HcQud$/1RGtiyz48/YK0xx79WCOkyOwqFOzOFN.xxrAAzmLNHy6k5y90vZU4D3eIe3PpIOCt.PYt1Wt5xthZ2ieVaY30'
@@ -110,7 +102,7 @@ Vagrant.configure("2") do |config|
       machine.hostmanager.aliases = []
       machine.disksize.size = cfg['disksize']
       machine.vm.provision "bootstrap", type: "shell" do |s|
-        s.args = [gitsrv["server"], gitsrv["port"], Resolv.getaddress(git_server)]
+        # s.args = [gitsrv["server"], gitsrv["port"], Resolv.getaddress(git_server)]
         s.path = 'shell/bootstrap.sh'
       end
       machine.vm.provision :ansible_local do |ansible|

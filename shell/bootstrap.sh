@@ -1,40 +1,40 @@
 #!/bin/bash
 
-GITSRVR=${1}
-GITPORT=${2}
-GITIP=${3}
+# GITSRVR=${1}
+# GITPORT=${2}
+# GITIP=${3}
 
-# Buscamos la IP del sevidor git
-if [ -n "${GITIP}" ]; then
-    grep -q "${GITSRVR}" /etc/hosts
-    if [ $? -ne 0 ]
-    then
-        echo "${GITIP}  ${GITSRVR}" >> /etc/hosts
-    else
-        sed -i -r "s/^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+( +${GITSRVR})/${GITIP}\1/" /etc/hosts
-    fi
-else
-    echo "No IP given for GIT hostname (${GITSRVR})"
-fi
+# # Buscamos la IP del sevidor git
+# if [ -n "${GITIP}" ]; then
+#     grep -q "${GITSRVR}" /etc/hosts
+#     if [ $? -ne 0 ]
+#     then
+#         echo "${GITIP}  ${GITSRVR}" >> /etc/hosts
+#     else
+#         sed -i -r "s/^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+( +${GITSRVR})/${GITIP}\1/" /etc/hosts
+#     fi
+# else
+#     echo "No IP given for GIT hostname (${GITSRVR})"
+# fi
 
-if [ ! -d /root/.ssh ]
-then
-    mkdir /root/.ssh
-fi
+# if [ ! -d /root/.ssh ]
+# then
+#     mkdir /root/.ssh
+# fi
 
-# Copiamos la clave privada y la configuración para la conexión al servidor
-cp /vagrant/files/ssh-config /root/.ssh/config
-cp /vagrant/files/ssh-key /root/.ssh/botkey
-chmod 600 /root/.ssh/botkey
+# # Copiamos la clave privada y la configuración para la conexión al servidor
+# cp /vagrant/files/ssh-config /root/.ssh/config
+# cp /vagrant/files/ssh-key /root/.ssh/botkey
+# chmod 600 /root/.ssh/botkey
 
-# Recogemos la clave SSH para añadirla a known_hosts
-SSHKEY=`ssh-keyscan -trsa -p ${GITPORT} ${GITSRVR}`
-if [ -f /root/.ssh/known_hosts ]
-then
-    grep -q "$SSHKEY" /root/.ssh/known_hosts || echo "$SSHKEY" >> /root/.ssh/known_hosts
-else
-    echo "$SSHKEY" >> /root/.ssh/known_hosts
-fi
+# # Recogemos la clave SSH para añadirla a known_hosts
+# SSHKEY=`ssh-keyscan -trsa -p ${GITPORT} ${GITSRVR}`
+# if [ -f /root/.ssh/known_hosts ]
+# then
+#     grep -q "$SSHKEY" /root/.ssh/known_hosts || echo "$SSHKEY" >> /root/.ssh/known_hosts
+# else
+#     echo "$SSHKEY" >> /root/.ssh/known_hosts
+# fi
 
 # Añadimos el repositorio y clave para poder actualizar ansible a una versión superior
 # que soporte/gestione correctamente los espacios de nombre en los roles.
