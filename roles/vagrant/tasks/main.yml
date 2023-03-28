@@ -1,0 +1,76 @@
+- name: Updating and upgrading packages
+  apt:
+    name: "*"
+    state: latest
+    update_cache: true
+    cache_valid_time: 3600
+    force_apt_get: true
+
+- name: Installing utilities and some common essentials
+  apt:
+    name: "{{ packages }}"
+    state: present
+  vars:
+    packages:
+      - aptitude
+      - arch-test
+      - bc
+      - build-essential
+      - chromium
+      - console-setup
+      - debconf-utils
+      - debootstrap
+      - diffstat
+      - gettext
+      - git
+      - gvfs-backends
+      - gvfs-fuse
+      - htop
+      - hunspell
+      - keyboard-configuration
+      - kpartx
+      - lftp
+      - libapache2-mod-php
+      - libarchive-tools
+      - libbz2-dev
+      - libc6-dev
+      - libffi-dev
+      - libgdbm-dev
+      - libncursesw5-dev
+      - libreadline-dev
+      - libsqlite3-dev
+      - libssl-dev
+      - linux-headers-amd64
+      - mc
+      - python3-dnspython
+      - quilt
+      - screen
+      - snapd
+      - sqlitebrowser
+      - sshfs
+      - swapspace
+      - task-spanish
+      - task-xfce-desktop
+      - terminator
+      - tk-dev
+      - tshark
+      - vim
+      - wget
+      - whois
+      - zerofree
+      - zip
+      - zlib1g-dev
+      - zsh
+
+- name: Update password
+  user:
+    name: '{{ user.login }}'
+    password:  '{{ user.password }}'
+
+- name: Enable password authentication
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    state: present
+    line: "PasswordAuthentication yes"
+    regexp: "^PasswordAuthentication +no"
+    backrefs: true

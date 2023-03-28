@@ -1,0 +1,4 @@
+user:
+  login: vagrant
+  # https://docs.ansible.com/ansible/latest/reference_appendices/faq.html#how-do-i-generate-encrypted-passwords-for-the-user-module
+  password: '$6$CZLcyzRWR2bF.Zt1$yabUY9Kk5qd9VbFVJqUpLlrotVL0hOQ5OwU.GKlmX5oMHDX/dI5FS4LvGW5yhoPcRlY3732hV.eI9cauY7FGr.'

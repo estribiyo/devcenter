@@ -1,0 +1,5 @@
+Host desarrollo.casadalourensa.es
+	User git
+	IdentityFile /root/.ssh/botkey
+	PubkeyAcceptedKeyTypes +ssh-rsa
+    HostKeyAlgorithms=+ssh-rsa
