@@ -439,6 +439,7 @@ try {
             $ws->login($ispconfig_api['user'], $ispconfig_api['password']);
             foreach ($sites as $domain => $v) {
                 $client_username = str_replace('@', '.', $v['email']);
+                $webroot = isset($v['webroot']) ? $v['webroot'] : 'web';
                 $domain_array = explode('.', $domain);
                 $dbname = isset($v['dbname']) ? $v['dbname'] : implode('_', array_reverse($domain_array));
                 $dbuser = isset($v['dbuser']) ? $v['dbuser'] : substr("dbu{$domain_array[0]}", 0, 16); # substr(implode('_', $domain_array), 0, 16);
@@ -469,7 +470,7 @@ try {
                                     // Revisamos si existe una configuración Joomla! para DevCenter (extensión .devcenter) y si la hay, sobreescribimos la que haya en web
                                     $origen = $root . '/configuration.php.devcenter';
                                     if (file_exists($origen)) {
-                                        $destino = $root . '/web/configuration.php';
+                                        $destino = $root . "/{$webroot}/configuration.php";
                                         chmod($origen, 0755);
                                         chmod($destino, 0755);
                                         if (file_exists($origen)) {
@@ -487,10 +488,10 @@ try {
                                             $sustitucion = '$1$2\'' . $dbpass . '\';';
                                             $cadena = preg_replace($patron, $sustitucion, $cadena);
                                             $patron = '~(.+)(\$log_path = )(.+);~';
-                                            $sustitucion = '$1$2\'' . $root . '/web/log\';';
+                                            $sustitucion = '$1$2\'' . $root . "/{$webroot}/log\';";
                                             $cadena = preg_replace($patron, $sustitucion, $cadena);
                                             $patron = '~(.+)(\$tmp_path = )(.+);~';
-                                            $sustitucion = '$1$2\'' . $root . '/web/tmp\';';
+                                            $sustitucion = '$1$2\'' . $root . "/{$webroot}/tmp\';";
                                             $cadena = preg_replace($patron, $sustitucion, $cadena);
                                             file_put_contents($origen, $cadena);
                                             @copy($origen, $destino);
@@ -501,7 +502,7 @@ try {
                                     // Revisamos si existe una configuración Drupal para DevCenter (extensión .devcenter) y si la hay, sobreescribimos la que haya en web
                                     $origen = $root . '/settings.php.devcenter';
                                     if (file_exists($origen)) {
-                                        $destino = $root . '/web/sites/default/settings.php';
+                                        $destino = $root . "/{$webroot}/sites/default/settings.php";
                                         chmod($origen, 0755);
                                         chmod($destino, 0755);
                                         if (file_exists($origen)) {
@@ -530,7 +531,7 @@ try {
                                     // Revisamos si existe una configuración Drupal para DevCenter (extensión .devcenter) y si la hay, sobreescribimos la que haya en web
                                     $origen = $root . '/parameters.php.devcenter';
                                     if (file_exists($origen)) {
-                                        $destino = $root . '/web/app/config/parameters.php';
+                                        $destino = $root . "/{$webroot}/app/config/parameters.php";
                                         chmod($origen, 0755);
                                         if (file_exists($origen)) {
                                             echo "\tConfiguración____| PrestaShop ($origen)\n";
@@ -561,7 +562,7 @@ try {
                                     // Revisamos si existe una configuración WordPress para DevCenter (extensión .devcenter) y si la hay, sobreescribimos la que haya en web
                                     $origen = $root . '/wp-config.php.devcenter';
                                     if (file_exists($origen)) {
-                                        $destino = $root . '/web/wp-config.php';
+                                        $destino = $root . "/{$webroot}/wp-config.php";
                                         chmod($origen, 0755);
                                         if (file_exists($origen)) {
                                             echo "\tConfiguración____| WordPress ($origen)\n";
