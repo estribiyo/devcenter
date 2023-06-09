@@ -107,7 +107,8 @@ Vagrant.configure("2") do |config|
       end
       machine.vm.provision :ansible_local do |ansible|
         ansible.become = true
-        ansible.config_file = "ansible.cfg"
+        ansible.compatibility_mode = "2.0"
+        # ansible.config_file = "ansible.cfg"
         ansible.galaxy_role_file = "requirements/" + cfg["profile"] + ".yml"
         ansible.galaxy_roles_path = "/vagrant/roles"
         ansible.galaxy_command = "sudo ansible-galaxy install --role-file=%{role_file} --roles-path=%{roles_path} --ignore-errors"

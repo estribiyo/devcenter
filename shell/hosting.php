@@ -53,10 +53,11 @@ function make_webdir($domain, $root)
             echo $fio->getMessage();
         }
     }
-    $must_exist = array('log', 'tmp', 'ssl');
-    foreach ($must_exist as $d) {
+    $must_exist = array('log' => "*.log", 'tmp' => "", 'ssl' => "*.crt\n*.key");
+    foreach ($must_exist as $d => $gitignore) {
         if (!file_exists("$root/$d")) {
             mkdir("$root/$d");
+            file_put_contents("$root/$d/.gitignore", $gitignore);
         }
     }
 }
@@ -77,13 +78,13 @@ function create_cert($domain, $dir, $country = 'ES', $state = 'None', $locality 
     $crt = "{$dir}/{$domain}.crt";
     if (!file_exists($dir) || !file_exists($key) || !file_exists($crt)) {
         shell_exec(
-            "openssl req " .
-                "-x509 " .
-                "-nodes " .
-                "-days 365 " .
-                "-newkey rsa:2048 " .
-                "-subj \"/C=$country/ST=$state/L=$locality/O=$organization/CN=$domain\" " .
-                "-keyout $key " .
+            "openssl req ".
+                "-x509 ".
+                "-nodes ".
+                "-days 365 ".
+                "-newkey rsa:2048 ".
+                "-subj \"/C=$country/ST=$state/L=$locality/O=$organization/CN=$domain\" ".
+                "-keyout $key ".
                 "-out $crt > /dev/null 2>&1"
         );
         // $subject = array(
@@ -127,7 +128,7 @@ class HostProvider
     {
         $this->reseller_id = $reseller_id;
         $this->client = new SoapClient(null, array(
-            'location' => $this->soap_uri . $this->soap_location,
+            'location' => $this->soap_uri.$this->soap_location,
             'uri' => $this->soap_uri,
             'stream_context' => stream_context_create(array(
                 'ssl' => array(
@@ -236,13 +237,13 @@ class HostProvider
                         'zip' => '',
                     ));
                 } catch (\SoapFault $ee) {
-                    $msgdisplay .= ": " . $ee->getMessage() . "\n";
+                    $msgdisplay .= ": ".$ee->getMessage()."\n";
                 }
             }
         }
         $coletilla = $client_id ? "ID: $client_id\n" : "\n";
         $relleno = 78 - strlen($msgdisplay) - strlen($coletilla);
-        echo $msgdisplay . " " . str_repeat("_", $relleno) . " " . $coletilla;
+        echo $msgdisplay." ".str_repeat("_", $relleno)." ".$coletilla;
         return $client_id;
     }
 
@@ -265,7 +266,7 @@ class HostProvider
                 $domain_id = $domain_data[0]['domain_id'];
             }
         } catch (\SoapFault $e) {
-            echo $domain . ": " . $e->getMessage() . "\n";
+            echo $domain.": ".$e->getMessage()."\n";
         }
         if (!$domain_id) {
             $domain_id = $this->client->sites_web_domain_add($this->session_id, $client_id, array(
@@ -341,7 +342,7 @@ class HostProvider
                 'database_user' => $dbuser
             ));
         } catch (\Error $e) {
-            echo "\t" . $e->getMessage();
+            echo "\t".$e->getMessage();
         }
         if (!$dbuser_id) {
             try {
@@ -351,7 +352,7 @@ class HostProvider
                     'database_password' => $password,
                 ));
             } catch (\Error $e) {
-                echo "\t" . $e->getMessage();
+                echo "\t".$e->getMessage();
             }
         }
         $database_id = null;
@@ -363,7 +364,7 @@ class HostProvider
                 $database_id = $database_data[0]['database_id'];
             }
         } catch (\Error $e) {
-            echo "\t" . $e->getMessage();
+            echo "\t".$e->getMessage();
         }
         if (!$database_id) {
             // echo "    Creating database...\n";
@@ -393,7 +394,7 @@ class HostProvider
                 while (!$success) {
                     sleep(60); // Esperamos a que se cree toda la parafernalia.
                     try {
-                        $pdo = new PDO('mysql:host=localhost;dbname=' . $database, $dbuser, $password);
+                        $pdo = new PDO('mysql:host=localhost;dbname='.$database, $dbuser, $password);
                         echo "\t_________________| Recuperando copia: $sqlfile\n";
                         shell_exec("mysql $database < $sqlfile");
                         $success = true;
@@ -405,7 +406,7 @@ class HostProvider
                             echo "\t_________________| Esperando acceso.: $msg\n";
                         }
                     } catch (\Error $err) {
-                        die("\t_________________| Error inesperado: " . $err->getMessage() . "\n");
+                        die("\t_________________| Error inesperado: ".$err->getMessage()."\n");
                     }
                 }
             }
@@ -433,7 +434,7 @@ try {
         die('Missing configuration!');
     } else {
         $sites = $args['guests']['ispconfig']['sites'];
-        if(count($sites) > 0) {
+        if (count($sites) > 0) {
             $ispconfig_api = $args['guests']['ispconfig']['extra_vars']['ispconfig_api'];
             $ws = new HostProvider();
             $ws->login($ispconfig_api['user'], $ispconfig_api['password']);
@@ -468,30 +469,30 @@ try {
                             switch ($v['type']) {
                                 case 'Joomla':
                                     // Revisamos si existe una configuración Joomla! para DevCenter (extensión .devcenter) y si la hay, sobreescribimos la que haya en web
-                                    $origen = $root . '/configuration.php.devcenter';
+                                    $origen = $root.'/configuration.php.devcenter';
                                     if (file_exists($origen)) {
-                                        $destino = $root . "/{$webroot}/configuration.php";
+                                        $destino = $root."/{$webroot}/configuration.php";
                                         chmod($origen, 0755);
                                         chmod($destino, 0755);
                                         if (file_exists($origen)) {
                                             echo "\tConfiguración____| Joomla! ($origen)\n";
                                             $cadena = file_get_contents($origen);
                                             $patron = '~(.+)(\$db = )(.+);~';
-                                            $sustitucion = '$1$2\'' . $dbname . '\';';
+                                            $sustitucion = '$1$2\''.$dbname.'\';';
                                             $patron = '~(.+)(\$host = )(.+);~';
-                                            $sustitucion = '$1$2\'' . $dbhost . '\';';
+                                            $sustitucion = '$1$2\''.$dbhost.'\';';
                                             $cadena = preg_replace($patron, $sustitucion, $cadena);
                                             $patron = '~(.+)(\$user = )(.+);~';
-                                            $sustitucion = '$1$2\'' . $dbuser . '\';';
+                                            $sustitucion = '$1$2\''.$dbuser.'\';';
                                             $cadena = preg_replace($patron, $sustitucion, $cadena);
                                             $patron = '~(.+)(\$password = )(.+);~';
-                                            $sustitucion = '$1$2\'' . $dbpass . '\';';
+                                            $sustitucion = '$1$2\''.$dbpass.'\';';
                                             $cadena = preg_replace($patron, $sustitucion, $cadena);
                                             $patron = '~(.+)(\$log_path = )(.+);~';
-                                            $sustitucion = '$1$2\'' . $root . "/{$webroot}/log\';";
+                                            $sustitucion = '$1$2\''.$root."/{$webroot}/log\';";
                                             $cadena = preg_replace($patron, $sustitucion, $cadena);
                                             $patron = '~(.+)(\$tmp_path = )(.+);~';
-                                            $sustitucion = '$1$2\'' . $root . "/{$webroot}/tmp\';";
+                                            $sustitucion = '$1$2\''.$root."/{$webroot}/tmp\';";
                                             $cadena = preg_replace($patron, $sustitucion, $cadena);
                                             file_put_contents($origen, $cadena);
                                             @copy($origen, $destino);
@@ -500,22 +501,22 @@ try {
                                     break;
                                 case 'Drupal':
                                     // Revisamos si existe una configuración Drupal para DevCenter (extensión .devcenter) y si la hay, sobreescribimos la que haya en web
-                                    $origen = $root . '/settings.php.devcenter';
+                                    $origen = $root.'/settings.php.devcenter';
                                     if (file_exists($origen)) {
-                                        $destino = $root . "/{$webroot}/sites/default/settings.php";
+                                        $destino = $root."/{$webroot}/sites/default/settings.php";
                                         chmod($origen, 0755);
                                         chmod($destino, 0755);
                                         if (file_exists($origen)) {
                                             echo "\tConfiguración____| Drupal ($origen)\n";
                                             $cadena = file_get_contents($origen);
                                             $patron = '~(.+)(\'database\' => \').+(\',)~';
-                                            $sustitucion = '$1$2' . $dbname . '$3';
+                                            $sustitucion = '$1$2'.$dbname.'$3';
                                             $cadena = preg_replace($patron, $sustitucion, $cadena);
                                             $patron = '~(.+)(\'username\' => \').+(\',)~';
-                                            $sustitucion = '$1$2' . $dbuser . '$3';
+                                            $sustitucion = '$1$2'.$dbuser.'$3';
                                             $cadena = preg_replace($patron, $sustitucion, $cadena);
                                             $patron = '~(.+)(\'password\' => \').+(\',)~';
-                                            $sustitucion = '$1$2' . $dbpass . '$3';
+                                            $sustitucion = '$1$2'.$dbpass.'$3';
                                             $cadena = preg_replace($patron, $sustitucion, $cadena);
                                             $patron = '~(.+)(\'host\' => \').+(\',)~';
                                             $sustitucion = '$1$2localhost$3';
@@ -529,24 +530,24 @@ try {
                                     break;
                                 case 'Prestashop':
                                     // Revisamos si existe una configuración Drupal para DevCenter (extensión .devcenter) y si la hay, sobreescribimos la que haya en web
-                                    $origen = $root . '/parameters.php.devcenter';
+                                    $origen = $root.'/parameters.php.devcenter';
                                     if (file_exists($origen)) {
-                                        $destino = $root . "/{$webroot}/app/config/parameters.php";
+                                        $destino = $root."/{$webroot}/app/config/parameters.php";
                                         chmod($origen, 0755);
                                         if (file_exists($origen)) {
                                             echo "\tConfiguración____| PrestaShop ($origen)\n";
                                             $cadena = file_get_contents($origen);
                                             $patron = '~(.+)(\'database_host\' => \').+(\',)~';
-                                            $sustitucion = '$1$2' . $dbhost . '$3';
+                                            $sustitucion = '$1$2'.$dbhost.'$3';
                                             $cadena = preg_replace($patron, $sustitucion, $cadena);
                                             $patron = '~(.+)(\'databse_user\' => \').+(\',)~';
-                                            $sustitucion = '$1$2' . $dbuser . '$3';
+                                            $sustitucion = '$1$2'.$dbuser.'$3';
                                             $cadena = preg_replace($patron, $sustitucion, $cadena);
                                             $patron = '~(.+)(\'database_name\' => \').+(\',)~';
-                                            $sustitucion = '$1$2' . $dbname . '$3';
+                                            $sustitucion = '$1$2'.$dbname.'$3';
                                             $cadena = preg_replace($patron, $sustitucion, $cadena);
                                             $patron = '~(.+)(\'database_password\' => \').+(\',)~';
-                                            $sustitucion = '$1$2' . $dbpass . '$3';
+                                            $sustitucion = '$1$2'.$dbpass.'$3';
                                             $cadena = preg_replace($patron, $sustitucion, $cadena);
                                             file_put_contents($origen, $cadena);
                                             copy($origen, $destino);
@@ -560,24 +561,24 @@ try {
                                     break;
                                 case 'WordPress':
                                     // Revisamos si existe una configuración WordPress para DevCenter (extensión .devcenter) y si la hay, sobreescribimos la que haya en web
-                                    $origen = $root . '/wp-config.php.devcenter';
+                                    $origen = $root.'/wp-config.php.devcenter';
                                     if (file_exists($origen)) {
-                                        $destino = $root . "/{$webroot}/wp-config.php";
+                                        $destino = $root."/{$webroot}/wp-config.php";
                                         chmod($origen, 0755);
                                         if (file_exists($origen)) {
                                             echo "\tConfiguración____| WordPress ($origen)\n";
                                             $cadena = file_get_contents($origen);
                                             $patron = '~(define\(\'DB_NAME\', \').+(\'\);)~';
-                                            $sustitucion = '$1' . $dbname . '$2';
+                                            $sustitucion = '$1'.$dbname.'$2';
                                             $cadena = preg_replace($patron, $sustitucion, $cadena);
                                             $patron = '~(define\(\'DB_USER\', \').+(\'\);)~';
-                                            $sustitucion = '$1' . $dbuser . '$2';
+                                            $sustitucion = '$1'.$dbuser.'$2';
                                             $cadena = preg_replace($patron, $sustitucion, $cadena);
                                             $patron = '~(define\(\'DB_PASSWORD\', \').+(\'\);)~';
-                                            $sustitucion = '$1' . $dbpass . '$2';
+                                            $sustitucion = '$1'.$dbpass.'$2';
                                             $cadena = preg_replace($patron, $sustitucion, $cadena);
                                             $patron = '~(define\(\'DB_HOST\', \').+(\'\);)~';
-                                            $sustitucion = '$1' . $dbhost . '$2';
+                                            $sustitucion = '$1'.$dbhost.'$2';
                                             $cadena = preg_replace($patron, $sustitucion, $cadena);
                                             file_put_contents($origen, $cadena);
                                             copy($origen, $destino);
@@ -595,26 +596,26 @@ try {
                             }
                         }
                     } catch (\Error $sf) {
-                        echo "\t" . $sf->getMessage() . "\n";
+                        echo "\t".$sf->getMessage()."\n";
                     }
                 }
                 $intento = 0;
                 $isp_database_id = null;
-                $sqls = glob($root . '/sql/*sql');
+                $sqls = glob($root.'/sql/*sql');
                 $cuantos = count($sqls);
                 $sqlfile = '';
                 if ($cuantos < 1) {
                     echo "\t_________________| No hay base de datos para recuperar.\n";
                 } elseif ($cuantos == '1') {
                     $sqlfile = $sqls[0];
-                // echo "\tRecuperando SQL {$sqls[0]}.\n";
-                // shell_exec("mysql $dbname < {$sqls[0]}");
+                    // echo "\tRecuperando SQL {$sqls[0]}.\n";
+                    // shell_exec("mysql $dbname < {$sqls[0]}");
                 } else {
                     if (file_exists("$root/sql/$dbname.sql")) {
                         // shell_exec("mysql $dbname < $root/sql/$dbname.sql");
                         $sqlfile = "$root/sql/$dbname.sql";
                     } else {
-                        echo "\t_________________| Hay " . $cuantos . " ficheros SQL y no hay coincidencia con el nombre de la base de datos. No se recupera ninguno.\n";
+                        echo "\t_________________| Hay ".$cuantos." ficheros SQL y no hay coincidencia con el nombre de la base de datos. No se recupera ninguno.\n";
                     }
                 }
                 while ($intento < 3 and $isp_database_id == null) {
@@ -622,7 +623,7 @@ try {
                     try {
                         $isp_database_id = $ws->isp_database($isp_client_id, $isp_domain_id, $dbname, $dbuser, $dbpass, $sqlfile);
                     } catch (\Error $sf) {
-                        echo "\t" . $sf->getMessage() . "\n";
+                        echo "\t".$sf->getMessage()."\n";
                     }
                 }
                 echo "\tPunto de montaje_| /mnt/$domain\n";
@@ -634,13 +635,13 @@ try {
         }
     }
 } catch (\SoapFault $sfe) {
-    echo "\tERROR: " . $sfe->getMessage() . "\n";
+    echo "\tERROR: ".$sfe->getMessage()."\n";
     print_r($sfe->getTrace());
 } catch (\Error $e) {
     $msg = $e->getMessage();
     if ($msg == 'Call to undefined function yaml_parse_file()') {
         shell_exec('DEBIAN_FRONTEND=noninteractive apt-get install php7.3-yaml');
-        shell_exec('/usr/bin/php ' . __FILE__);
+        shell_exec('/usr/bin/php '.__FILE__);
     } else {
         die("ERROR provisioning hosts: $msg\n");
     }
