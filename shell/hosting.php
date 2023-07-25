@@ -115,6 +115,8 @@ class HostProvider
 {
     public $session_id = null;
     public $country = 'ES';
+    public $client = null;
+    public $reseller_id = null;
 
     private $soap_uri = 'https://localhost:8080/remote/';
     private $soap_location = 'index.php';
@@ -610,6 +612,9 @@ try {
                     $sqlfile = $sqls[0];
                     // echo "\tRecuperando SQL {$sqls[0]}.\n";
                     // shell_exec("mysql $dbname < {$sqls[0]}");
+                    if($sqlfile != "{$dbname}.sql") {
+                                        
+                    }
                 } else {
                     if (file_exists("$root/sql/$dbname.sql")) {
                         // shell_exec("mysql $dbname < $root/sql/$dbname.sql");

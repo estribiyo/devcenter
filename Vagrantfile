@@ -86,7 +86,7 @@ Vagrant.configure("2") do |config|
       gitsrv = CONF["git"]
       common_dirs = CONF['common_dirs']
       machine.vm.provider :virtualbox do |vb|
-        vb.name = cfg['name']
+        vb.name = cfg['name']+" (#{`hostname`[0..-2]})"
         vb.gui = cfg['gui']
         vb.customize ["storageattach", :id, "--storagectl", "SATA Controller", "--port", "1", "--device", "0", "--type", "dvddrive", "--medium", "emptydrive"]
         cfg["vbox"].each do |parameter,value|
@@ -95,7 +95,7 @@ Vagrant.configure("2") do |config|
           end
         end
       end
-      machine.vm.box = "debian/buster64"
+      machine.vm.box = "debian/bullseye64"
       machine.vm.hostname = cfg["hostname"]
       machine.vm.network :private_network, ip: cfg["ip"]
       machine.ssh.forward_agent = true
