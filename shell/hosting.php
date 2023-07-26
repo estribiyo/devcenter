@@ -39,18 +39,16 @@ function make_webdir($domain, $root)
         }
     }
 
-    if (!file_exists($root)) {
-        mkdir($root, 0775, true);
-        echo "\tCreating and mounting ($root)\n";
-        shell_exec("mount -t none -o bind /mnt/{$domain} $root");
-    } else {
+    if (!file_exists($root) && !is_link($root)) {
+        shell_exec("ln -s /mnt/{$domain}/ $root");
+    } elseif (!is_link($root)) {
         try {
             // echo "Deleting original web folder contents ($root)\n";
             shell_exec("chattr -i $root");
             shell_exec("umount $root/log");
             recurseRmdir($root);
-            echo "\tMounting ($root)\n";
-            shell_exec("mount -t none -o bind /mnt/{$domain} $root");
+            echo "\tLinking ($root)\n";
+            shell_exec("ln -s /mnt/{$domain}/ $root");
         } catch (Error $fio) {
             echo $fio->getMessage();
         }
