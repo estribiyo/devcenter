@@ -71,7 +71,7 @@ end
 Vagrant.configure("2") do |config|
 
   config.vbguest.no_install  = false
-  config.vbguest.auto_update = true
+  config.vbguest.auto_update = false
   config.vbguest.no_remote   = false
   config.vbguest.installer_options = { running_kernel_modules: ["vboxguest"] }
 
@@ -108,10 +108,10 @@ Vagrant.configure("2") do |config|
       machine.vm.provision :ansible_local do |ansible|
         ansible.become = true
         ansible.compatibility_mode = "2.0"
-        # ansible.config_file = "ansible.cfg"
+        ansible.config_file = "ansible.cfg"
         ansible.galaxy_role_file = "requirements/" + cfg["profile"] + ".yml"
         ansible.galaxy_roles_path = "/vagrant/roles"
-        ansible.galaxy_command = "sudo ansible-galaxy install --role-file=%{role_file} --roles-path=%{roles_path} --ignore-errors"
+        ansible.galaxy_command = "ANSIBLE_STDOUT_CALLBACK=debug ansible-galaxy install --force --role-file=%{role_file} --roles-path=%{roles_path} --ignore-errors"
         ansible.playbook = "playbooks/" + cfg["profile"] + ".yml"
         ansible.limit = "all"
         ansible.install_mode = "pip3"
