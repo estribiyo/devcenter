@@ -81,7 +81,7 @@ class HostProvider
 
     private $soap_uri = 'https://localhost:8080/remote/';
     private $soap_location = 'index.php';
-    private $tab = "\t_________________| ";
+    public $tab = "\t_________________| ";
 
     /**
      * Class construction.
@@ -213,14 +213,52 @@ class HostProvider
 
     public function isp_mail_domain($client_id, $domain, $server = 1)
     {
-        echo "{$this->tab}Se crea el domino de e-mail: $domain\n";
-        $this->client->mail_domain_add($this->session_id, $client_id, array(
-            'domain' => $domain,
-            'server_id' => $server,
-            'dkim' => 'n',
-            'dkim_selector' => 'default',
-            'active' => 'y',
-        ));
+        $domain_id = null;
+        try {
+            $domain_data = $this->client->mail_domain_get($this->session_id, array(
+                'domain' => $domain
+            ));
+            if (!empty($domain_data)) {
+                $domain_id = $domain_data[0]['domain_id'];
+            }
+        } catch (\SoapFault $e) {
+            echo $domain . ": " . $e->getMessage() . "\n";
+        }
+        if (!$domain_id) {
+            echo "{$this->tab}Se crea el domino de e-mail: $domain\n";
+            $this->client->mail_domain_add($this->session_id, $client_id, array(
+                'domain' => $domain,
+                'server_id' => $server,
+                'dkim' => 'n',
+                'dkim_selector' => 'default',
+                'active' => 'y',
+            ));
+        }
+    }
+
+    public function isp_mail_client($client_id, $email, $password, $server = 1)
+    {
+        try {
+            $email_data = $this->client->mail_user_get($this->session_id, array(
+                'email' => $email
+            ));
+            if (empty($email_data)) {
+                $this->client->mail_user_add($this->session_id, $client_id, array(
+                    'email' => $email,
+                    'login' => $email,
+                    'password' => $password,
+                    'quota' => 0,
+                    'move_junk' => 'n',
+                    'purge_trash_days' => 0,
+                    'purge_junk_days' => 0,
+                    'postfix' => 'y',
+                    'server_id' => $server,
+                ));
+            }
+        } catch (\SoapFault $e) {
+            echo "\t$email: " . $e->getMessage() . "\n";
+        }
+        echo "\tBuzón e-mail_____| $email\n";
     }
 
     /**
@@ -233,7 +271,7 @@ class HostProvider
      */
     public function isp_domain($client_id, $domain, $server = 1)
     {
-        $domain_id = null;
+        $mail_id = null;
         try {
             $domain_data = $this->client->sites_web_domain_get($this->session_id, array(
                 'domain' => $domain
@@ -414,7 +452,7 @@ class HostProvider
                 shell_exec("chattr -i $root");
                 shell_exec("umount $root/log");
                 recurseRmdir($root);
-                echo "\t{$this->tab}Linking ($root)\n";
+                echo "\tLinking (ln -s /mnt/{$domain}/ $root)\n";
                 shell_exec("ln -s /mnt/{$domain}/ $root");
             } catch (Error $fio) {
                 echo $fio->getMessage();
@@ -614,15 +652,15 @@ try {
                         echo "\t" . $sf->getMessage() . "\n";
                     }
                 }
-
-                $this->isp_mail_domain($isp_client_id, $domain);
+                $ws->isp_mail_domain($isp_client_id, $domain);
+                $ws->isp_mail_client($isp_client_id, "info@$domain", $dbpass);
                 $intento = 0;
                 $isp_database_id = null;
                 $sqls = glob($root . '/sql/*sql');
                 $cuantos = count($sqls);
                 $sqlfile = '';
                 if ($cuantos < 1) {
-                    echo "{$this->tab}No hay base de datos para recuperar.\n";
+                    echo "{$ws->tab}No hay base de datos para recuperar.\n";
                 } elseif ($cuantos == '1') {
                     $sqlfile = $sqls[0];
                     // echo "\tRecuperando SQL {$sqls[0]}.\n";
@@ -634,7 +672,7 @@ try {
                         // shell_exec("mysql $dbname < $root/sql/$dbname.sql");
                         $sqlfile = "$root/sql/$dbname.sql";
                     } else {
-                        echo "{$this->tab}Hay " . $cuantos . " ficheros SQL y no hay coincidencia con el nombre de la base de datos. No se recupera ninguno.\n";
+                        echo "{$ws->tab}Hay " . $cuantos . " ficheros SQL y no hay coincidencia con el nombre de la base de datos. No se recupera ninguno.\n";
                     }
                 }
                 while ($intento < 3 and $isp_database_id == null) {
