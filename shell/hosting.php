@@ -491,10 +491,10 @@ try {
                                             $sustitucion = '$1$2\'' . $dbpass . '\';';
                                             $cadena = preg_replace($patron, $sustitucion, $cadena);
                                             $patron = '~(.+)(\$log_path = )(.+);~';
-                                            $sustitucion = '$1$2\'' . $root . "/{$webroot}/log\';";
+                                            $sustitucion = '$1$2\'' . $root . "/{$webroot}/log/';";
                                             $cadena = preg_replace($patron, $sustitucion, $cadena);
                                             $patron = '~(.+)(\$tmp_path = )(.+);~';
-                                            $sustitucion = '$1$2\'' . $root . "/{$webroot}/tmp\';";
+                                            $sustitucion = '$1$2\'' . $root . "/{$webroot}/tmp/';";
                                             $cadena = preg_replace($patron, $sustitucion, $cadena);
                                             file_put_contents($origen, $cadena);
                                             @copy($origen, $destino);
