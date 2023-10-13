@@ -21,7 +21,7 @@ If they aren't installed, Vagrant will install itself (with root privileges).
 
 The default configuration file will be generated if it does not exist. The first time we run `vagrant up`, it will write a `config.yml` and exit. We can modify said file to adapt it to our needs and launch `vagrant up` again.
 
-**IMPORTANT**: On Linux machines we need to create a file in `/etc/vbox/networking.conf` (if not exists) and put a valid range in it or disable it:
+**IMPORTANT**: On Linux machines we need to create a file in `/etc/vbox/networs.conf` (if not exists) and put a valid range in it or disable it:
 
 ```
 * 0.0.0.0/0 ::/0
