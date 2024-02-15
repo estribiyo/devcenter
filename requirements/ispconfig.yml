@@ -1,7 +1,7 @@
 - name: common
   src: git+https://github.com/estribiyo/ansible-common.git
-- name: ohmyzsh
-  src: git+https://github.com/estribiyo/ansible-ohmyzsh.git
+- name: ohmyposh
+  src: git+https://github.com/estribiyo/ansible-ohmyposh.git
 - name: screen
   src: git+https://github.com/estribiyo/ansible-gnuscreen.git
 - name: devel-generic
@@ -10,7 +10,5 @@
   src: git+https://github.com/estribiyo/ansible-devel-php.git
 - name: ispconfig
   src: git+https://github.com/estribiyo/ansible-ispconfig.git
-- name: telegraf
-  src: git+https://github.com/estribiyo/ansible-telegraf.git
 - name: docker
-  src: git+https://github.com/estribiyo/ansible-docker.git  
+  src: git+https://github.com/estribiyo/ansible-docker.git

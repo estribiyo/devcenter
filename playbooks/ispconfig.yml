@@ -6,6 +6,7 @@
     - { role: vagrant }
     - { role: common, tags: always }
     - { role: screen, tags: always }
+    - { role: ohmyposh, tags: always }
     - { role: devel-generic, tags: always }
     - { role: devel-php, tags: always }
     - { role: ispconfig, tags: always }
