@@ -24,45 +24,6 @@ function recurseRmdir($dir)
 }
 
 /**
- * [make_webdir description]
- * @param  [type] $domain                [description]
- * @param  [type] $root               [description]
- * @return [type]          [description]
- */
-function make_webdir($domain, $root)
-{
-    $tmp = explode('/', $root);
-    $bdir = implode('/', array_slice($tmp, 0, count($tmp) - 1));
-    if (!file_exists($bdir)) {
-        if (!mkdir($bdir, 0777, true)) {
-            die("Fallo al crear las carpetas...\n");
-        }
-    }
-
-    if (!file_exists($root) && !is_link($root)) {
-        shell_exec("ln -s /mnt/{$domain}/ $root");
-    } elseif (!is_link($root)) {
-        try {
-            // echo "Deleting original web folder contents ($root)\n";
-            shell_exec("chattr -i $root");
-            shell_exec("umount $root/log");
-            recurseRmdir($root);
-            echo "\tLinking ($root)\n";
-            shell_exec("ln -s /mnt/{$domain}/ $root");
-        } catch (Error $fio) {
-            echo $fio->getMessage();
-        }
-    }
-    $must_exist = array('log' => "*.log", 'tmp' => "", 'ssl' => "*.crt\n*.key", 'error' => '');
-    foreach ($must_exist as $d => $gitignore) {
-        if (!file_exists("$root/$d")) {
-            mkdir("$root/$d");
-            file_put_contents("$root/$d/.gitignore", $gitignore);
-        }
-    }
-}
-
-/**
  * [create_cert description]
  *
  * @param mixed $domain
@@ -120,6 +81,7 @@ class HostProvider
 
     private $soap_uri = 'https://localhost:8080/remote/';
     private $soap_location = 'index.php';
+    public $tab = "\t_________________| ";
 
     /**
      * Class construction.
@@ -249,6 +211,56 @@ class HostProvider
         return $client_id;
     }
 
+    public function isp_mail_domain($client_id, $domain, $server = 1)
+    {
+        $domain_id = null;
+        try {
+            $domain_data = $this->client->mail_domain_get($this->session_id, array(
+                'domain' => $domain
+            ));
+            if (!empty($domain_data)) {
+                $domain_id = $domain_data[0]['domain_id'];
+            }
+        } catch (\SoapFault $e) {
+            echo $domain . ": " . $e->getMessage() . "\n";
+        }
+        if (!$domain_id) {
+            echo "{$this->tab}Se crea el domino de e-mail: $domain\n";
+            $this->client->mail_domain_add($this->session_id, $client_id, array(
+                'domain' => $domain,
+                'server_id' => $server,
+                'dkim' => 'n',
+                'dkim_selector' => 'default',
+                'active' => 'y',
+            ));
+        }
+    }
+
+    public function isp_mail_client($client_id, $email, $password, $server = 1)
+    {
+        try {
+            $email_data = $this->client->mail_user_get($this->session_id, array(
+                'email' => $email
+            ));
+            if (empty($email_data)) {
+                $this->client->mail_user_add($this->session_id, $client_id, array(
+                    'email' => $email,
+                    'login' => $email,
+                    'password' => $password,
+                    'quota' => 0,
+                    'move_junk' => 'n',
+                    'purge_trash_days' => 0,
+                    'purge_junk_days' => 0,
+                    'postfix' => 'y',
+                    'server_id' => $server,
+                ));
+            }
+        } catch (\SoapFault $e) {
+            echo "\t$email: " . $e->getMessage() . "\n";
+        }
+        echo "\tBuzón e-mail_____| $email\n";
+    }
+
     /**
      * Get or create ISP Domain.
      *
@@ -259,7 +271,7 @@ class HostProvider
      */
     public function isp_domain($client_id, $domain, $server = 1)
     {
-        $domain_id = null;
+        $mail_id = null;
         try {
             $domain_data = $this->client->sites_web_domain_get($this->session_id, array(
                 'domain' => $domain
@@ -397,23 +409,62 @@ class HostProvider
                     sleep(60); // Esperamos a que se cree toda la parafernalia.
                     try {
                         $pdo = new PDO('mysql:host=localhost;dbname=' . $database, $dbuser, $password);
-                        echo "\t_________________| Recuperando copia: $sqlfile\n";
+                        echo "{$this->tab}Recuperando copia: $sqlfile\n";
                         shell_exec("mysql $database < $sqlfile");
                         $success = true;
                     } catch (\PDOException $pdoex) {
                         $msg = $pdoex->getMessage();
                         if (strpos('Access denied for user', $msg) !== false) {
-                            echo "\t_________________| Esperando acceso.: Todavía no se creó el usuario '$dbuser'.\n";
+                            echo "{$this->tab}Esperando acceso.: Todavía no se creó el usuario '$dbuser'.\n";
                         } else {
-                            echo "\t_________________| Esperando acceso.: $msg\n";
+                            echo "{$this->tab}Esperando acceso.: $msg\n";
                         }
                     } catch (\Error $err) {
-                        die("\t_________________| Error inesperado: " . $err->getMessage() . "\n");
+                        die("{$this->tab}Error inesperado: " . $err->getMessage() . "\n");
                     }
                 }
             }
         }
         return $database_id;
+    }
+
+    /**
+     * [make_webdir description]
+     * @param  [type] $domain                [description]
+     * @param  [type] $root               [description]
+     * @return [type]          [description]
+     */
+    public function make_webdir($domain, $root)
+    {
+        $tmp = explode('/', $root);
+        $bdir = implode('/', array_slice($tmp, 0, count($tmp) - 1));
+        if (!file_exists($bdir)) {
+            if (!mkdir($bdir, 0777, true)) {
+                die("Fallo al crear las carpetas...\n");
+            }
+        }
+
+        if (!file_exists($root) && !is_link($root)) {
+            shell_exec("ln -s /mnt/{$domain}/ $root");
+        } elseif (!is_link($root)) {
+            try {
+                // echo "Deleting original web folder contents ($root)\n";
+                shell_exec("chattr -i $root");
+                shell_exec("umount $root/log");
+                recurseRmdir($root);
+                echo "\tLinking (ln -s /mnt/{$domain}/ $root)\n";
+                shell_exec("ln -s /mnt/{$domain}/ $root");
+            } catch (Error $fio) {
+                echo $fio->getMessage();
+            }
+        }
+        $must_exist = array('log' => "*.log", 'tmp' => "", 'ssl' => "*.crt\n*.key", 'error' => '');
+        foreach ($must_exist as $d => $gitignore) {
+            if (!file_exists("$root/$d")) {
+                mkdir("$root/$d");
+                file_put_contents("$root/$d/.gitignore", $gitignore);
+            }
+        }
     }
 
     /**
@@ -465,7 +516,7 @@ try {
                     try {
                         $isp_domain_id = $ws->isp_domain($isp_client_id, $domain);
                         $root = "/var/www/clients/client{$isp_client_id}/web{$isp_domain_id}";
-                        make_webdir($domain, $root);
+                        $ws->make_webdir($domain, $root);
                         create_cert($domain, "$root/ssl", $ws->country, '', '', $v['company_name']);
                         if (isset($v['type'])) {
                             switch ($v['type']) {
@@ -601,13 +652,15 @@ try {
                         echo "\t" . $sf->getMessage() . "\n";
                     }
                 }
+                $ws->isp_mail_domain($isp_client_id, $domain);
+                $ws->isp_mail_client($isp_client_id, "info@$domain", $dbpass);
                 $intento = 0;
                 $isp_database_id = null;
                 $sqls = glob($root . '/sql/*sql');
                 $cuantos = count($sqls);
                 $sqlfile = '';
                 if ($cuantos < 1) {
-                    echo "\t_________________| No hay base de datos para recuperar.\n";
+                    echo "{$ws->tab}No hay base de datos para recuperar.\n";
                 } elseif ($cuantos == '1') {
                     $sqlfile = $sqls[0];
                     // echo "\tRecuperando SQL {$sqls[0]}.\n";
@@ -619,7 +672,7 @@ try {
                         // shell_exec("mysql $dbname < $root/sql/$dbname.sql");
                         $sqlfile = "$root/sql/$dbname.sql";
                     } else {
-                        echo "\t_________________| Hay " . $cuantos . " ficheros SQL y no hay coincidencia con el nombre de la base de datos. No se recupera ninguno.\n";
+                        echo "{$ws->tab}Hay " . $cuantos . " ficheros SQL y no hay coincidencia con el nombre de la base de datos. No se recupera ninguno.\n";
                     }
                 }
                 while ($intento < 3 and $isp_database_id == null) {

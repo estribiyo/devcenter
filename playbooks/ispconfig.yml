@@ -5,11 +5,10 @@
   roles:
     - { role: vagrant }
     - { role: common, tags: always }
-    - { role: ohmyzsh, tags: always }
     - { role: screen, tags: always }
+    - { role: ohmyposh, tags: always }
     - { role: devel-generic, tags: always }
     - { role: devel-php, tags: always }
-    - { role: telegraf, tags: always }
     - { role: ispconfig, tags: always }
     - { role: docker, tags: always }
 ...

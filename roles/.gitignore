@@ -1,8 +1,2 @@
-common
-devel-generic
-devel-php
-docker
-ispconfig
-ohmyzsh
-screen
-telegraf
+*
+!.gitignore
